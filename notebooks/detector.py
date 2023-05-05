@@ -58,10 +58,10 @@ class DetectorTF2:
             y_min = boxes_list[idx][1]
             x_max = boxes_list[idx][2]
             y_max = boxes_list[idx][3]
-            detected_class =  str(boxes_list[idx][4])
+            detected_class =  f"count:{idx}"
             score = str(np.round(boxes_list[idx][-1], 4))
 
-            text = detected_class + ": " + score            
+            text = detected_class + "- " + score            
             cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
             cv2.putText(img, text, (x_min + 5, y_min - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
