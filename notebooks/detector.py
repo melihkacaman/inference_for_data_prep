@@ -5,10 +5,11 @@ import tensorflow as tf
 
 class DetectorTF2:
 
-    def __init__(self, path_to_checkpoint, path_to_labelmap, class_id=None, threshold=0.5):
-        # class_id is list of ids for desired classes, or None for all classes in the labelmap
-        self.class_id = class_id
+    def __init__(self, path_to_checkpoint, labelmap: dict, threshold=0.5):
+        # labelmap is a dictionary that points an id and the classname which belongs to the 
         self.Threshold = threshold
+        self.labelmap = labelmap
+
         # Loading label map
         #label_map = load_labelmap(path_to_labelmap)
         #categories = convert_label_map_to_categories(label_map, max_num_classes=90, use_display_name=True)
@@ -29,24 +30,27 @@ class DetectorTF2:
         det_boxes = self.ExtractBBoxes(bboxes, bclasses, bscores, im_width, im_height)
 
         return det_boxes
+    
+    def getCategory(self, predicted_class_id: int): 
+        return self.labelmap[predicted_class_id] 
 
 
     def ExtractBBoxes(self, bboxes, bclasses, bscores, im_width, im_height):
         bbox = []
         for idx in range(len(bboxes)):
-            if self.class_id is None or bclasses[idx] in self.class_id:
-                if bscores[idx] >= self.Threshold:
-                    y_min = int(bboxes[idx][0] * im_height)
-                    x_min = int(bboxes[idx][1] * im_width)
-                    y_max = int(bboxes[idx][2] * im_height)
-                    x_max = int(bboxes[idx][3] * im_width)
-                    #class_label = self.category_index[int(bclasses[idx])]['name']
-                    bbox.append([x_min, 
-                                 y_min, 
-                                 x_max, 
-                                 y_max, 
-                                 #class_label, 
-                                 float(bscores[idx])])
+            if bscores[idx] >= self.Threshold:
+                y_min = int(bboxes[idx][0] * im_height)
+                x_min = int(bboxes[idx][1] * im_width)
+                y_max = int(bboxes[idx][2] * im_height)
+                x_max = int(bboxes[idx][3] * im_width)
+                class_label = self.getCategory(int(bclasses[idx]))
+                bbox.append([x_min, 
+                                y_min, 
+                                x_max, 
+                                y_max,  
+                                float(bscores[idx]), 
+                                class_label
+                                ])
         return bbox
 
 
@@ -58,8 +62,8 @@ class DetectorTF2:
             y_min = boxes_list[idx][1]
             x_max = boxes_list[idx][2]
             y_max = boxes_list[idx][3]
-            detected_class =  f"count:{idx}"
-            score = str(np.round(boxes_list[idx][-1], 4))
+            detected_class =  f"class: {boxes_list[idx][-1]} count:{idx}"
+            score = str(np.round(boxes_list[idx][4], 4))
 
             text = detected_class + "- " + score            
             cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
